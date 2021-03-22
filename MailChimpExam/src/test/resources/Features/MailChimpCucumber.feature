@@ -11,7 +11,7 @@ Feature: Create account
 
     Examples: 
       | email       | username          | password       | feedback                                        |
-     # | valid email | valid username    | valid password | new confirmation page                           |
-      #| valid email | too long username | valid password | error message in the user field - too long      |
+      | valid email | valid username    | valid password | new confirmation page                           |
+      | valid email | too long username | valid password | error message in the user field - too long      |
       | valid email | existing username | valid password | error message in the user field - already taken |
-      #| no email    | valid username    | valid password | error message in the email field - none entered |
+      | no email    | valid username    | valid password | error message in the email field - none entered |

@@ -3,10 +3,12 @@ package stepDefinitions;
 import static org.junit.Assert.assertEquals;
 
 import java.security.SecureRandom;
-import java.util.Random;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -21,6 +23,7 @@ public class StepDefinitions {
 
 	@Given("I have opened up the MailChimp account user registration page")
 	public void i_have_opened_up_the_mail_chimp_account_user_registration_page() {
+
 		System.setProperty("webdriver.chrome.driver", "C:\\Users\\Jesper\\eclipse\\Drivers\\chromedriver.exe");
 		driver = new ChromeDriver();
 		driver.get("https://login.mailchimp.com/signup/");
@@ -28,6 +31,7 @@ public class StepDefinitions {
 
 	@When("I enter valid email in the Email field")
 	public void i_enter_valid_email_in_the_email_field() {
+
 		WebElement emailField = driver.findElement(By.id("email"));
 		StringBuilder sb = new StringBuilder(12);
 		for (int i = 0; i < 12; i++)
@@ -49,12 +53,12 @@ public class StepDefinitions {
 	public void i_enter_valid_password_in_the_password_field() {
 
 		WebElement userPassword = driver.findElement(By.id("new_password"));
-
 		userPassword.sendKeys("SamePasswordForEvery1!");
 	}
 
 	@When("I enter existing username in the Username field")
 	public void i_enter_existing_username_in_the_username_field() {
+
 		WebElement userField = driver.findElement(By.id("new_username"));
 		userField.sendKeys("user");
 	}
@@ -66,6 +70,7 @@ public class StepDefinitions {
 
 	@When("I enter too long username in the Username field")
 	public void i_enter_too_long_username_in_the_username_field() {
+
 		WebElement userField = driver.findElement(By.id("new_username"));
 		StringBuilder sb = new StringBuilder(101);
 		for (int i = 0; i < 101; i++)
@@ -76,7 +81,6 @@ public class StepDefinitions {
 
 	@When("I press the Sign-up button")
 	public void i_press_the_sign_up_button() throws InterruptedException {
-		Thread.sleep(5000);
 		WebElement userPassword = driver.findElement(By.id("new_password"));
 		userPassword.sendKeys(Keys.ENTER);
 
@@ -84,7 +88,10 @@ public class StepDefinitions {
 
 	@Then("I get a new confirmation page and verify the result")
 	public void i_get_a_new_confirmation_page_and_verify_the_result() throws InterruptedException {
-
+		WebElement confirmation = driver
+				.findElement(By.cssSelector("h1[class='!margin-bottom--lv3 no-transform center-on-medium']"));
+		assertEquals("Check your email", confirmation.getText());
+		driver.quit();
 	}
 
 	@Then("I get a error message in the email field - none entered and verify the result")
@@ -94,6 +101,7 @@ public class StepDefinitions {
 		assertEquals("Please enter a value", errorEmail.getText());
 		WebElement errorMessage = driver.findElement(By.id("av-flash-errors"));
 		assertEquals("Please check your entry and try again.", errorMessage.getText());
+		driver.quit();
 	}
 
 	@Then("I get a error message in the user field - too long and verify the result")
@@ -103,6 +111,7 @@ public class StepDefinitions {
 		assertEquals("Enter a value less than 100 characters long", errorTooLongUsername.getText());
 		WebElement errorMessage = driver.findElement(By.id("av-flash-errors"));
 		assertEquals("Please check your entry and try again.", errorMessage.getText());
+		driver.quit();
 	}
 
 	@Then("I get a error message in the user field - already taken and verify the result")
@@ -114,6 +123,7 @@ public class StepDefinitions {
 				.findElement(By.xpath("//*[@id=\"signup-form\"]/fieldset/div[2]/div/span"));
 		assertEquals("Another user with this username already exists. Maybe it's your evil twin. Spooky.",
 				duplicateUserError.getText());
+		driver.quit();
 	}
 
 }
