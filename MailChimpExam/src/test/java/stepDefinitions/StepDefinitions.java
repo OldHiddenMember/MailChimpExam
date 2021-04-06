@@ -3,13 +3,14 @@ package stepDefinitions;
 import static org.junit.Assert.assertEquals;
 
 import java.security.SecureRandom;
+import java.util.List;
 
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -21,11 +22,14 @@ public class StepDefinitions {
 	private String charList = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 	private SecureRandom rnd = new SecureRandom();
 
+	@Before
+	public void select_chrome() {
+		DriveCreator browser = new DriveCreator();
+		driver = browser.createBrowser("chrome");
+	}
+
 	@Given("I have opened up the MailChimp account user registration page")
 	public void i_have_opened_up_the_mail_chimp_account_user_registration_page() {
-
-		System.setProperty("webdriver.chrome.driver", "C:\\Users\\Jesper\\eclipse\\Drivers\\chromedriver.exe");
-		driver = new ChromeDriver();
 		driver.get("https://login.mailchimp.com/signup/");
 	}
 
@@ -36,7 +40,9 @@ public class StepDefinitions {
 		StringBuilder sb = new StringBuilder(12);
 		for (int i = 0; i < 12; i++)
 			sb.append(charList.charAt(rnd.nextInt(charList.length())));
-		emailField.sendKeys(sb + "@" + sb + ".cx");
+		String email = sb + "@" + sb + ".cx";
+		emailField.sendKeys(email);
+		assertEquals(email, emailField.getAttribute("value"));
 	}
 
 	@When("I enter valid username in the Username field")
@@ -54,6 +60,11 @@ public class StepDefinitions {
 
 		WebElement userPassword = driver.findElement(By.id("new_password"));
 		userPassword.sendKeys("SamePasswordForEvery1!");
+
+		List<WebElement> elements = driver.findElements(By.tagName("li"));
+		for (WebElement e : elements) {
+			assertEquals(false, e.isDisplayed());
+		}
 	}
 
 	@When("I enter existing username in the Username field")
@@ -65,7 +76,7 @@ public class StepDefinitions {
 
 	@When("I enter no email in the Email field")
 	public void i_enter_no_email_in_the_email_field() {
-
+		// leaves the email field blank
 	}
 
 	@When("I enter too long username in the Username field")
@@ -81,6 +92,7 @@ public class StepDefinitions {
 
 	@When("I press the Sign-up button")
 	public void i_press_the_sign_up_button() throws InterruptedException {
+
 		WebElement userPassword = driver.findElement(By.id("new_password"));
 		userPassword.sendKeys(Keys.ENTER);
 
@@ -91,7 +103,6 @@ public class StepDefinitions {
 		WebElement confirmation = driver
 				.findElement(By.cssSelector("h1[class='!margin-bottom--lv3 no-transform center-on-medium']"));
 		assertEquals("Check your email", confirmation.getText());
-		driver.quit();
 	}
 
 	@Then("I get a error message in the email field - none entered and verify the result")
@@ -101,7 +112,6 @@ public class StepDefinitions {
 		assertEquals("Please enter a value", errorEmail.getText());
 		WebElement errorMessage = driver.findElement(By.id("av-flash-errors"));
 		assertEquals("Please check your entry and try again.", errorMessage.getText());
-		driver.quit();
 	}
 
 	@Then("I get a error message in the user field - too long and verify the result")
@@ -111,7 +121,6 @@ public class StepDefinitions {
 		assertEquals("Enter a value less than 100 characters long", errorTooLongUsername.getText());
 		WebElement errorMessage = driver.findElement(By.id("av-flash-errors"));
 		assertEquals("Please check your entry and try again.", errorMessage.getText());
-		driver.quit();
 	}
 
 	@Then("I get a error message in the user field - already taken and verify the result")
@@ -123,7 +132,16 @@ public class StepDefinitions {
 				.findElement(By.xpath("//*[@id=\"signup-form\"]/fieldset/div[2]/div/span"));
 		assertEquals("Another user with this username already exists. Maybe it's your evil twin. Spooky.",
 				duplicateUserError.getText());
-		driver.quit();
+
 	}
 
+	public void click(By by) {
+		new WebDriverWait(driver, 10).until(ExpectedConditions.elementToBeClickable(by));
+		driver.findElement(by).click();
+	}
+
+	@After
+	public void tearDown() {
+		driver.quit();
+	}
 }
