@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import java.util.List;
 
 import org.openqa.selenium.*;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -31,32 +32,67 @@ public class StepDefinitions {
 	@Given("I have opened up the MailChimp account user registration page")
 	public void i_have_opened_up_the_mail_chimp_account_user_registration_page() {
 		driver.get("https://login.mailchimp.com/signup/");
+		driver.manage().window().fullscreen();
+		new WebDriverWait(driver, 10)
+				.until(ExpectedConditions.visibilityOfElementLocated(By.id("onetrust-reject-all-handler")));
+		WebElement consent = driver.findElement(By.id("onetrust-reject-all-handler"));
+		consent.click();
+
 	}
 
-	@When("I enter valid email in the Email field")
-	public void i_enter_valid_email_in_the_email_field() {
+	@Given("I enter {string} in the Email field")
+	public void i_enter_in_the_email_field(String emailInput) {
 
-		WebElement emailField = driver.findElement(By.id("email"));
-		StringBuilder sb = new StringBuilder(12);
-		for (int i = 0; i < 12; i++)
-			sb.append(charList.charAt(rnd.nextInt(charList.length())));
-		String email = sb + "@" + sb + ".cx";
-		emailField.sendKeys(email);
-		assertEquals(email, emailField.getAttribute("value"));
+		switch (emailInput) {
+		case "valid":
+			WebElement emailField = driver.findElement(By.id("email"));
+			StringBuilder sb = new StringBuilder(12);
+			for (int i = 0; i < 12; i++)
+				sb.append(charList.charAt(rnd.nextInt(charList.length())));
+			String email = sb + "@" + sb + ".cx";
+			emailField.sendKeys(email);
+			assertEquals(email, emailField.getAttribute("value"));
+
+			break;
+		default:
+			// enter nothing in the emailfield
+		}
 	}
 
-	@When("I enter valid username in the Username field")
-	public void i_enter_valid_username_in_the_username_field() {
+	@Given("I enter {string} in the Username field")
+	public void i_enter_in_the_username_field(String usernameInput) {
 
 		WebElement userField = driver.findElement(By.id("new_username"));
-		StringBuilder sb = new StringBuilder(16);
-		for (int i = 0; i < 16; i++)
-			sb.append(charList.charAt(rnd.nextInt(charList.length())));
+		StringBuilder sb;
+		switch (usernameInput) {
+		case "valid":
+
+			sb = new StringBuilder(16);
+			for (int i = 0; i < 16; i++)
+				sb.append(charList.charAt(rnd.nextInt(charList.length())));
+
+			break;
+		case "too long":
+			sb = new StringBuilder(101);
+			for (int i = 0; i < 101; i++)
+				sb.append(charList.charAt(rnd.nextInt(charList.length())));
+
+			break;
+		case "existing":
+			sb = new StringBuilder();
+			sb.append("user");
+			break;
+
+		default:
+			sb = null;
+
+		}
 		userField.sendKeys(sb);
+
 	}
 
-	@When("I enter valid password in the Password field")
-	public void i_enter_valid_password_in_the_password_field() {
+	@Given("I enter {string} in the Password field")
+	public void i_enter_in_the_password_field(String passwordInput) {
 
 		WebElement userPassword = driver.findElement(By.id("new_password"));
 		userPassword.sendKeys("SamePasswordForEvery1!");
@@ -67,77 +103,48 @@ public class StepDefinitions {
 		}
 	}
 
-	@When("I enter existing username in the Username field")
-	public void i_enter_existing_username_in_the_username_field() {
-
-		WebElement userField = driver.findElement(By.id("new_username"));
-		userField.sendKeys("user");
-	}
-
-	@When("I enter no email in the Email field")
-	public void i_enter_no_email_in_the_email_field() {
-		// leaves the email field blank
-	}
-
-	@When("I enter too long username in the Username field")
-	public void i_enter_too_long_username_in_the_username_field() {
-
-		WebElement userField = driver.findElement(By.id("new_username"));
-		StringBuilder sb = new StringBuilder(101);
-		for (int i = 0; i < 101; i++)
-			sb.append(charList.charAt(rnd.nextInt(charList.length())));
-		userField.sendKeys(sb);
-
-	}
-
 	@When("I press the Sign-up button")
 	public void i_press_the_sign_up_button() throws InterruptedException {
 
-		WebElement userPassword = driver.findElement(By.id("new_password"));
-		userPassword.sendKeys(Keys.ENTER);
+		WebElement signUp = driver.findElement(By.id("create-account"));
+
+		signUp.click();
 
 	}
 
-	@Then("I get a new confirmation page and verify the result")
-	public void i_get_a_new_confirmation_page_and_verify_the_result() throws InterruptedException {
-		WebElement confirmation = driver
-				.findElement(By.cssSelector("h1[class='!margin-bottom--lv3 no-transform center-on-medium']"));
-		assertEquals("Check your email", confirmation.getText());
-	}
+	@Then("I get a {string} and verify the result")
+	public void i_get_a_and_verify_the_result(String result) {
+		WebElement errorMessage;
+		switch (result) {
+		case "confirmation":
+			WebElement confirmation = driver
+					.findElement(By.cssSelector("h1[class='!margin-bottom--lv3 no-transform center-on-medium']"));
+			assertEquals("Check your email", confirmation.getText());
+			break;
+		case "error message - too long user":
+			WebElement errorTooLongUsername = driver
+					.findElement(By.xpath("//*[@id=\"signup-form\"]/fieldset/div[2]/div/span"));
+			assertEquals("Enter a value less than 100 characters long", errorTooLongUsername.getText());
+			errorMessage = driver.findElement(By.id("av-flash-errors"));
+			assertEquals("Please check your entry and try again.", errorMessage.getText());
 
-	@Then("I get a error message in the email field - none entered and verify the result")
-	public void i_get_a_error_message_in_the_email_field_none_entered_and_verify_the_result()
-			throws InterruptedException {
-		WebElement errorEmail = driver.findElement(By.xpath("//*[@id=\"signup-form\"]/fieldset/div[1]/div/span"));
-		assertEquals("Please enter a value", errorEmail.getText());
-		WebElement errorMessage = driver.findElement(By.id("av-flash-errors"));
-		assertEquals("Please check your entry and try again.", errorMessage.getText());
-	}
+			break;
+		case "error message - already taken user":
 
-	@Then("I get a error message in the user field - too long and verify the result")
-	public void i_get_a_error_message_in_the_user_field_too_long_and_verify_the_result() throws InterruptedException {
-		WebElement errorTooLongUsername = driver
-				.findElement(By.xpath("//*[@id=\"signup-form\"]/fieldset/div[2]/div/span"));
-		assertEquals("Enter a value less than 100 characters long", errorTooLongUsername.getText());
-		WebElement errorMessage = driver.findElement(By.id("av-flash-errors"));
-		assertEquals("Please check your entry and try again.", errorMessage.getText());
-	}
+			WebElement duplicateUserError = driver
+					.findElement(By.xpath("//*[@id=\"signup-form\"]/fieldset/div[2]/div/span"));
+			assertEquals("Another user with this username already exists. Maybe it's your evil twin. Spooky.",
+					duplicateUserError.getText());
+			errorMessage = driver.findElement(By.id("av-flash-errors"));
+			assertEquals("Please check your entry and try again.", errorMessage.getText());
 
-	@Then("I get a error message in the user field - already taken and verify the result")
-	public void i_get_a_error_message_in_the_user_field_already_taken_and_verify_the_result()
-			throws InterruptedException {
-		WebElement errorMessage = driver.findElement(By.id("av-flash-errors"));
-		assertEquals("Please check your entry and try again.", errorMessage.getText());
-		WebElement duplicateUserError = driver
-				.findElement(By.xpath("//*[@id=\"signup-form\"]/fieldset/div[2]/div/span"));
-		assertEquals("Another user with this username already exists. Maybe it's your evil twin. Spooky.",
-				duplicateUserError.getText());
-
-	}
-
-	public void click(By by) {
-		new WebDriverWait(driver, 10).until(ExpectedConditions.elementToBeClickable(by));
-		driver.findElement(by).click();
+			break;
+		case "error message - none entered email":
+			WebElement errorEmail = driver.findElement(By.xpath("//*[@id=\"signup-form\"]/fieldset/div[1]/div/span"));
+			assertEquals("Please enter a value", errorEmail.getText());
+			errorMessage = driver.findElement(By.id("av-flash-errors"));
+			assertEquals("Please check your entry and try again.", errorMessage.getText());
+		}
 	}
 
 	@After
